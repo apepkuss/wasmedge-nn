@@ -1,5 +1,5 @@
 use super::*;
-use std::{fs, path::Path};
+use std::fs;
 
 #[derive(Debug, Default)]
 pub(crate) struct OpenvinoBackend {
@@ -10,34 +10,33 @@ impl Backend for OpenvinoBackend {
         "openvino"
     }
 
+    // fn load(
+    //     &mut self,
+    //     xml_file: &str,
+    //     bin_file: &str,
+    //     target: ExecutionTarget,
+    // ) -> Result<Box<dyn BackendGraph>, BackendError> {
+    //     let xml = fs::read_to_string(xml_file).map_err(|e| BackendError::InvalidPath(e))?;
+    //     let xml_bytes = xml.into_bytes();
+    //     println!("Load graph XML, size in bytes: {}", xml_bytes.len());
+
+    //     let weights = fs::read(bin_file).map_err(|e| BackendError::InvalidPath(e))?;
+    //     println!("Load graph weights, size in bytes: {}", weights.len());
+
+    //     self.load(xml_bytes.as_slice(), weights.as_slice(), target)
+    // }
+
     fn load(
         &mut self,
-        xml_file: impl AsRef<Path>,
-        bin_file: impl AsRef<Path>,
-        target: ExecutionTarget,
-    ) -> Result<Box<dyn BackendGraph>, BackendError> {
-        let xml =
-            fs::read_to_string(xml_file.as_ref()).map_err(|e| BackendError::InvalidPath(e))?;
-        let xml_bytes = xml.into_bytes();
-        println!("Load graph XML, size in bytes: {}", xml_bytes.len());
-
-        let weights = fs::read(bin_file.as_ref()).map_err(|e| BackendError::InvalidPath(e))?;
-        println!("Load graph weights, size in bytes: {}", weights.len());
-
-        self.load_from_bytes(xml_bytes.as_slice(), weights.as_slice(), target)
-    }
-
-    fn load_from_bytes(
-        &mut self,
-        xml_bytes: impl AsRef<[u8]>,
-        weights: impl AsRef<[u8]>,
-        target: ExecutionTarget,
+        xml_bytes: &[u8],
+        weights: &[u8],
+        target: wasi_nn::ExecutionTarget,
     ) -> Result<Box<dyn BackendGraph>, BackendError> {
         let graph = unsafe {
             wasi_nn::load(
-                &[xml_bytes.as_ref(), weights.as_ref()],
+                &[xml_bytes, weights],
                 wasi_nn::GRAPH_ENCODING_OPENVINO,
-                target.into(),
+                target,
             )
             .map_err(|e| BackendError::ModelLoad(e.to_string()))?
         };

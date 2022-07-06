@@ -1,6 +1,8 @@
 pub mod backend;
+pub mod ctx;
 pub mod cv;
 pub mod dnn;
+pub mod error;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Dimension {

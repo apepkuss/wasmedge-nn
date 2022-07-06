@@ -1,22 +1,21 @@
 pub mod openvino;
 
-use std::path::Path;
 use thiserror::Error;
 
 /// A [Backend] contains the necessary state to load [BackendGraph]s.
 pub(crate) trait Backend {
     fn name(&self) -> &str;
+    // fn load(
+    //     &mut self,
+    //     architecure: &str,
+    //     weights: &str,
+    //     target: ExecutionTarget,
+    // ) -> Result<Box<dyn BackendGraph>, BackendError>;
     fn load(
         &mut self,
-        architecure: impl AsRef<Path>,
-        weights: impl AsRef<Path>,
-        target: ExecutionTarget,
-    ) -> Result<Box<dyn BackendGraph>, BackendError>;
-    fn load_from_bytes(
-        &mut self,
-        architecure: impl AsRef<[u8]>,
-        weights: impl AsRef<[u8]>,
-        target: ExecutionTarget,
+        architecure: &[u8],
+        weights: &[u8],
+        target: wasi_nn::ExecutionTarget,
     ) -> Result<Box<dyn BackendGraph>, BackendError>;
 }
 
@@ -71,71 +70,3 @@ impl From<ExecutionTarget> for wasi_nn::ExecutionTarget {
         }
     }
 }
-
-// #[repr(C)]
-// #[derive(Copy, Clone, Debug)]
-// pub struct Tensor<'a> {
-//     pub shape: TensorShape,
-//     pub dtype: TensorType,
-//     /// Contains the tensor data.
-//     pub data: &'a [u8],
-// }
-// impl<'a> Tensor<'a> {
-//     fn as_wasinn_tenor(&'a self) -> wasi_nn::Tensor<'a> {
-//         wasi_nn::Tensor {
-//             dimensions: self.shape.as_slice(),
-//             r#type: self.dtype.into(),
-//             data: self.data,
-//         }
-//     }
-// }
-// impl From<Tensor<'_>> for wasi_nn::Tensor<'_> {
-//     fn from(tensor: Tensor) -> Self {
-//         wasi_nn::Tensor {
-//             dimensions: [tensor.shape.batch, tensor.shape.channels],
-//             r#type: tensor.dtype.into(),
-//             data: tensor.data,
-//         }
-//     }
-// }
-
-// #[derive(Debug, Clone, Copy)]
-// pub struct TensorShape {
-//     pub batch: u32,
-//     pub height: u32,
-//     pub width: u32,
-//     pub channels: u32,
-// }
-// impl TensorShape {
-//     pub fn new(batch: u32, height: u32, width: u32, channels: u32) -> Self {
-//         Self {
-//             batch,
-//             height,
-//             width,
-//             channels,
-//         }
-//     }
-// }
-
-// #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-// pub enum TensorType {
-//     U8,
-//     F32,
-// }
-// impl TensorType {
-//     /// Returns the number of bytes occupied by the dtype.
-//     pub fn bytes(&self) -> usize {
-//         match self {
-//             TensorType::U8 => 1,
-//             TensorType::F32 => 4,
-//         }
-//     }
-// }
-// impl From<TensorType> for wasi_nn::TensorType {
-//     fn from(dtype: TensorType) -> Self {
-//         match dtype {
-//             TensorType::U8 => wasi_nn::TENSOR_TYPE_U8,
-//             TensorType::F32 => wasi_nn::TENSOR_TYPE_F32,
-//         }
-//     }
-// }
