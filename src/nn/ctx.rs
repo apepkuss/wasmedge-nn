@@ -1,35 +1,16 @@
-use crate::backend::{openvino::OpenvinoBackend, Backend, BackendExecutionContext, BackendGraph};
 use crate::error::{UsageError, WasiNnError};
+use crate::nn::backend::{
+    openvino::OpenvinoBackend, Backend, BackendExecutionContext, BackendGraph,
+};
 use std::{cell::RefCell, collections::HashMap, hash::Hash};
 
 pub type WasiNnResult<T> = std::result::Result<T, WasiNnError>;
 
-pub(crate) struct Ctx {
-    pub(crate) backends: HashMap<String, Box<dyn crate::backend::Backend>>,
-    pub(crate) graphs: Table<wasi_nn::Graph, Box<dyn BackendGraph>>,
-    pub(crate) executions: Table<wasi_nn::GraphExecutionContext, Box<dyn BackendExecutionContext>>,
-}
-impl Ctx {
-    pub fn new() -> WasiNnResult<Self> {
-        let mut backends = HashMap::new();
-        backends.insert(
-            String::from("openvino"),
-            Box::new(OpenvinoBackend::default()) as Box<dyn Backend>,
-        );
-        Ok(Self {
-            backends,
-            graphs: Table::default(),
-            executions: Table::default(),
-        })
-    }
-}
-
-/// This struct solely wraps [Ctx] in a `RefCell`.
 pub struct WasiNnCtx {
     pub(crate) ctx: RefCell<Ctx>,
 }
 impl WasiNnCtx {
-    /// Make a new `WasiNnCtx` with the default settings.
+    /// Create a new `WasiNnCtx` with the default settings.
     pub fn new() -> WasiNnResult<Self> {
         Ok(Self {
             ctx: RefCell::new(Ctx::new()?),
@@ -40,7 +21,7 @@ impl WasiNnCtx {
         &mut self,
         architecure: &str,
         weights: &str,
-        encoding: GraphEncoding,
+        encoding: wasi_nn::GraphEncoding,
         target: wasi_nn::ExecutionTarget,
     ) -> WasiNnResult<wasi_nn::Graph> {
         let arch = std::fs::read_to_string(architecure).map_err(|e| WasiNnError::InvalidPath(e))?;
@@ -57,11 +38,12 @@ impl WasiNnCtx {
         &mut self,
         architecure: &[u8],
         weights: &[u8],
-        encoding: GraphEncoding,
+        encoding: wasi_nn::GraphEncoding,
         target: wasi_nn::ExecutionTarget,
     ) -> WasiNnResult<wasi_nn::Graph> {
         let encoding_id = match encoding {
-            GraphEncoding::Openvino => "openvino",
+            wasi_nn::GRAPH_ENCODING_OPENVINO => "openvino",
+            _ => panic!("unknown encoding: {}", encoding),
         };
         let graph = if let Some(backend) = self.ctx.borrow_mut().backends.get_mut(encoding_id) {
             backend.load(architecure, weights, target)?
@@ -118,6 +100,26 @@ impl WasiNnCtx {
         } else {
             Err(UsageError::InvalidGraphHandle.into())
         }
+    }
+}
+
+pub(crate) struct Ctx {
+    pub(crate) backends: HashMap<String, Box<dyn Backend>>,
+    pub(crate) graphs: Table<wasi_nn::Graph, Box<dyn BackendGraph>>,
+    pub(crate) executions: Table<wasi_nn::GraphExecutionContext, Box<dyn BackendExecutionContext>>,
+}
+impl Ctx {
+    pub fn new() -> WasiNnResult<Self> {
+        let mut backends = HashMap::new();
+        backends.insert(
+            String::from("openvino"),
+            Box::new(OpenvinoBackend::default()) as Box<dyn Backend>,
+        );
+        Ok(Self {
+            backends,
+            graphs: Table::default(),
+            executions: Table::default(),
+        })
     }
 }
 

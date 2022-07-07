@@ -1,9 +1,7 @@
 use super::*;
 
 #[derive(Debug, Default)]
-pub(crate) struct OpenvinoBackend {
-    core: String, // Option<openvino::Core>,
-}
+pub(crate) struct OpenvinoBackend {}
 impl Backend for OpenvinoBackend {
     fn name(&self) -> &str {
         "openvino"

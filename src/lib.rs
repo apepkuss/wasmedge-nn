@@ -1,8 +1,9 @@
-pub mod backend;
-pub mod ctx;
 pub mod cv;
 pub mod dnn;
 pub mod error;
+pub mod nn;
+
+use nn::ctx::{WasiNnCtx, WasiNnResult};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Dimension {
