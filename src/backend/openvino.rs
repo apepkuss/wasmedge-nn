@@ -1,5 +1,4 @@
 use super::*;
-use std::fs;
 
 #[derive(Debug, Default)]
 pub(crate) struct OpenvinoBackend {
@@ -9,22 +8,6 @@ impl Backend for OpenvinoBackend {
     fn name(&self) -> &str {
         "openvino"
     }
-
-    // fn load(
-    //     &mut self,
-    //     xml_file: &str,
-    //     bin_file: &str,
-    //     target: ExecutionTarget,
-    // ) -> Result<Box<dyn BackendGraph>, BackendError> {
-    //     let xml = fs::read_to_string(xml_file).map_err(|e| BackendError::InvalidPath(e))?;
-    //     let xml_bytes = xml.into_bytes();
-    //     println!("Load graph XML, size in bytes: {}", xml_bytes.len());
-
-    //     let weights = fs::read(bin_file).map_err(|e| BackendError::InvalidPath(e))?;
-    //     println!("Load graph weights, size in bytes: {}", weights.len());
-
-    //     self.load(xml_bytes.as_slice(), weights.as_slice(), target)
-    // }
 
     fn load(
         &mut self,
@@ -76,13 +59,13 @@ impl BackendExecutionContext for OpenvinoExecutionContext {
         unsafe { wasi_nn::compute(self.ctx).map_err(|e| BackendError::Compute(e.to_string())) }
     }
 
-    fn get_output(&mut self, index: u32, destination: &mut [u8]) -> Result<u32, BackendError> {
+    fn get_output(&mut self, index: u32, out_buffer: &mut [u8]) -> Result<u32, BackendError> {
         unsafe {
             wasi_nn::get_output(
                 self.ctx,
                 index,
-                destination.as_mut_ptr(),
-                destination.len() as u32,
+                out_buffer.as_mut_ptr(),
+                out_buffer.len() as u32,
             )
             .map_err(|e| BackendError::GetOutput(e.to_string()))
         }

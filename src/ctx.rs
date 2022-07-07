@@ -2,9 +2,9 @@ use crate::backend::{openvino::OpenvinoBackend, Backend, BackendExecutionContext
 use crate::error::{UsageError, WasiNnError};
 use std::{cell::RefCell, collections::HashMap, hash::Hash};
 
-pub(crate) type WasiNnResult<T> = std::result::Result<T, WasiNnError>;
+pub type WasiNnResult<T> = std::result::Result<T, WasiNnError>;
 
-pub struct Ctx {
+pub(crate) struct Ctx {
     pub(crate) backends: HashMap<String, Box<dyn crate::backend::Backend>>,
     pub(crate) graphs: Table<wasi_nn::Graph, Box<dyn BackendGraph>>,
     pub(crate) executions: Table<wasi_nn::GraphExecutionContext, Box<dyn BackendExecutionContext>>,
@@ -71,18 +71,55 @@ impl WasiNnCtx {
         let graph_id = self.ctx.borrow_mut().graphs.insert(graph);
         Ok(graph_id)
     }
-}
 
-// impl<'a> UserErrorConversion for WasiNnCtx {
-//     fn nn_errno_from_wasi_nn_error(&mut self, e: WasiNnError) -> Result<NnErrno, wiggle::Trap> {
-//         eprintln!("Host error: {:?}", e);
-//         match e {
-//             WasiNnError::BackendError(_) => unimplemented!(),
-//             WasiNnError::GuestError(_) => unimplemented!(),
-//             WasiNnError::UsageError(_) => unimplemented!(),
-//         }
-//     }
-// }
+    fn init_execution_context(
+        &mut self,
+        graph_id: wasi_nn::Graph,
+    ) -> WasiNnResult<wasi_nn::GraphExecutionContext> {
+        let exec_context = if let Some(graph) = self.ctx.borrow_mut().graphs.get_mut(graph_id) {
+            graph.init_execution_context()?
+        } else {
+            return Err(UsageError::InvalidGraphHandle.into());
+        };
+
+        let exec_context_id = self.ctx.borrow_mut().executions.insert(exec_context);
+        Ok(exec_context_id)
+    }
+
+    fn set_input(
+        &mut self,
+        exec_context_id: wasi_nn::GraphExecutionContext,
+        index: u32,
+        tensor: wasi_nn::Tensor,
+    ) -> WasiNnResult<()> {
+        if let Some(exec_context) = self.ctx.borrow_mut().executions.get_mut(exec_context_id) {
+            Ok(exec_context.set_input(index, tensor)?)
+        } else {
+            Err(UsageError::InvalidGraphHandle.into())
+        }
+    }
+
+    fn compute(&mut self, exec_context_id: wasi_nn::GraphExecutionContext) -> WasiNnResult<()> {
+        if let Some(exec_context) = self.ctx.borrow_mut().executions.get_mut(exec_context_id) {
+            Ok(exec_context.compute()?)
+        } else {
+            Err(UsageError::InvalidExecutionContextHandle.into())
+        }
+    }
+
+    fn get_output(
+        &mut self,
+        exec_context_id: wasi_nn::GraphExecutionContext,
+        index: u32,
+        out_buffer: &mut [u8],
+    ) -> WasiNnResult<u32> {
+        if let Some(exec_context) = self.ctx.borrow_mut().executions.get_mut(exec_context_id) {
+            Ok(exec_context.get_output(index, out_buffer)?)
+        } else {
+            Err(UsageError::InvalidGraphHandle.into())
+        }
+    }
+}
 
 /// Record handle entries in a table.
 pub struct Table<K, V> {
