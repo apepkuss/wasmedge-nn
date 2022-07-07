@@ -7,7 +7,7 @@ use std::{cell::RefCell, collections::HashMap, hash::Hash};
 pub type WasiNnResult<T> = std::result::Result<T, WasiNnError>;
 
 pub struct WasiNnCtx {
-    pub(crate) ctx: RefCell<Ctx>,
+    ctx: RefCell<Ctx>,
 }
 impl WasiNnCtx {
     /// Create a new `WasiNnCtx` with the default settings.
@@ -17,7 +17,7 @@ impl WasiNnCtx {
         })
     }
 
-    fn load(
+    pub fn load(
         &mut self,
         architecure: &str,
         weights: &str,
@@ -34,7 +34,7 @@ impl WasiNnCtx {
         self.load_from_bytes(arch_bytes.as_slice(), weights.as_slice(), encoding, target)
     }
 
-    fn load_from_bytes(
+    pub fn load_from_bytes(
         &mut self,
         architecure: &[u8],
         weights: &[u8],
@@ -54,7 +54,7 @@ impl WasiNnCtx {
         Ok(graph_id)
     }
 
-    fn init_execution_context(
+    pub fn init_execution_context(
         &mut self,
         graph_id: wasi_nn::Graph,
     ) -> WasiNnResult<wasi_nn::GraphExecutionContext> {
@@ -68,7 +68,7 @@ impl WasiNnCtx {
         Ok(exec_context_id)
     }
 
-    fn set_input(
+    pub fn set_input(
         &mut self,
         exec_context_id: wasi_nn::GraphExecutionContext,
         index: u32,
@@ -81,7 +81,7 @@ impl WasiNnCtx {
         }
     }
 
-    fn compute(&mut self, exec_context_id: wasi_nn::GraphExecutionContext) -> WasiNnResult<()> {
+    pub fn compute(&mut self, exec_context_id: wasi_nn::GraphExecutionContext) -> WasiNnResult<()> {
         if let Some(exec_context) = self.ctx.borrow_mut().executions.get_mut(exec_context_id) {
             Ok(exec_context.compute()?)
         } else {
@@ -89,7 +89,7 @@ impl WasiNnCtx {
         }
     }
 
-    fn get_output(
+    pub fn get_output(
         &mut self,
         exec_context_id: wasi_nn::GraphExecutionContext,
         index: u32,
@@ -155,9 +155,4 @@ where
         self.next_key += 1;
         K::from(current)
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum GraphEncoding {
-    Openvino,
 }

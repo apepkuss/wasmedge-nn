@@ -3,8 +3,6 @@ pub mod dnn;
 pub mod error;
 pub mod nn;
 
-use nn::ctx::{WasiNnCtx, WasiNnResult};
-
 #[derive(Debug, Clone, Copy)]
 pub struct Dimension {
     pub height: u32,

@@ -44,3 +44,9 @@ pub enum BackendError {
     #[error("Not enough memory to copy tensor data of size: {0}")]
     NotEnoughMemory(usize),
 }
+
+#[derive(Debug, Error)]
+pub enum CvError {
+    #[error("Failed while")]
+    ProcessImage(#[from] image::ImageError),
+}

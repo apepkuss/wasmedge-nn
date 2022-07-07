@@ -1,8 +1,9 @@
+use crate::error::CvError;
 use image::{self, imageops, DynamicImage, Pixel, Rgb32FImage, RgbImage};
 
-pub fn imread(
-    filename: impl AsRef<std::path::Path>,
-) -> Result<DynamicImage, Box<dyn std::error::Error>> {
+type CvResult<T> = Result<T, CvError>;
+
+pub fn imread(filename: impl AsRef<std::path::Path>) -> CvResult<DynamicImage> {
     Ok(image::open(filename.as_ref())?)
 }
 
@@ -44,6 +45,10 @@ pub fn to_bgr8u_bytes(src: &mut RgbImage) -> &[u8] {
     slice
 }
 
+pub fn to_tensor<T>(h: usize, w: usize, c: usize, data: Vec<T>) -> ndarray::Array3<T> {
+    ndarray::Array::from_shape_vec((h, w, c), data as Vec<T>).unwrap()
+}
+
 #[cfg(test)]
 mod tests {
     use image::GenericImageView;
@@ -63,6 +68,9 @@ mod tests {
 
         let dst = to_bgr8u_bytes(&mut rgb8_image);
         assert_eq!(dst.len(), 224 * 224 * 3);
+
+        let tensor = to_tensor(224, 224, 3, Vec::from(dst));
+        assert_eq!(tensor.shape(), [224, 224, 3]);
     }
 
     #[test]
@@ -78,5 +86,44 @@ mod tests {
 
         let dst = to_bgr32f_bytes(&mut rgb32f_image);
         assert_eq!(dst.len(), 224 * 224 * 3 * 4);
+    }
+
+    #[test]
+    fn test_tensor_u8() {
+        let src = image::open("/Users/sam/workspace/rust/image-demo/ferris.png").unwrap();
+        dbg!("dims: {:?}", src.dimensions());
+
+        let dst = resize(src, 224, 224);
+        assert_eq!(dst.dimensions(), (224, 224));
+
+        let rgb8_image = dst.into_rgb8();
+        println!("number of elements: {}", rgb8_image.len());
+
+        let data = rgb8_image.to_vec();
+
+        let tensor = to_tensor(224, 224, 3, data);
+        assert_eq!(tensor.shape(), [224, 224, 3]);
+
+        let new_tensor = tensor.insert_axis(ndarray::Axis(0));
+        assert_eq!(new_tensor.shape(), [1, 224, 224, 3]);
+    }
+
+    #[test]
+    fn test_tensor_f32() {
+        let src = image::open("/Users/sam/workspace/rust/image-demo/ferris.png").unwrap();
+        dbg!("dims: {:?}", src.dimensions());
+
+        let dst = resize(src, 224, 224);
+        assert_eq!(dst.dimensions(), (224, 224));
+
+        let rgb32f_image = dst.into_rgb32f();
+        println!("number of elements: {}", rgb32f_image.len());
+
+        let data = rgb32f_image.into_vec();
+        let tensor = to_tensor(224, 224, 3, data);
+        assert_eq!(tensor.shape(), [224, 224, 3]);
+
+        let new_tensor = tensor.insert_axis(ndarray::Axis(0));
+        assert_eq!(new_tensor.shape(), [1, 224, 224, 3]);
     }
 }
