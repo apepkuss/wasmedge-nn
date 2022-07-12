@@ -1,6 +1,9 @@
 [package]
+description = "This package contains the safe wasi-nn interfaces and image processing functions."
 edition = "2021"
+license = "Apache-2.0"
 name = "wasmedge-nn"
+repository = "https://github.com/apepkuss/wasmedge-nn"
 version = "0.1.0"
 
 [dependencies]
