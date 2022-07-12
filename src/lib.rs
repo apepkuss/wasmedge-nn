@@ -1,5 +1,4 @@
 pub mod cv;
-pub mod dnn;
 pub mod error;
 pub mod nn;
 
