@@ -11,13 +11,13 @@ impl Backend for OpenvinoBackend {
         &mut self,
         xml_bytes: &[u8],
         weights: &[u8],
-        target: wasi_nn::ExecutionTarget,
+        target: ExecutionTarget,
     ) -> Result<Box<dyn BackendGraph>, BackendError> {
         let graph = unsafe {
             wasi_nn::load(
                 &[xml_bytes, weights],
                 wasi_nn::GRAPH_ENCODING_OPENVINO,
-                target,
+                target.into(),
             )
             .map_err(|e| BackendError::ModelLoad(e.to_string()))?
         };
@@ -46,9 +46,9 @@ pub(crate) struct OpenvinoExecutionContext {
     ctx: wasi_nn::GraphExecutionContext,
 }
 impl BackendExecutionContext for OpenvinoExecutionContext {
-    fn set_input(&mut self, index: u32, tensor: wasi_nn::Tensor) -> Result<(), BackendError> {
+    fn set_input(&mut self, index: u32, tensor: Tensor) -> Result<(), BackendError> {
         unsafe {
-            wasi_nn::set_input(self.ctx, index, tensor)
+            wasi_nn::set_input(self.ctx, index, tensor.as_wasinn_tensor())
                 .map_err(|e| BackendError::SetInput(e.to_string()))
         }
     }

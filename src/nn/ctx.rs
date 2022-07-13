@@ -1,6 +1,7 @@
 use crate::error::{UsageError, WasiNnError};
-use crate::nn::backend::{
-    openvino::OpenvinoBackend, Backend, BackendExecutionContext, BackendGraph,
+use crate::nn::{
+    backend::{openvino::OpenvinoBackend, Backend, BackendExecutionContext, BackendGraph},
+    ExecutionTarget, GraphEncoding, Tensor,
 };
 use std::{cell::RefCell, collections::HashMap, hash::Hash};
 
@@ -21,8 +22,8 @@ impl WasiNnCtx {
         &mut self,
         architecure: &str,
         weights: &str,
-        encoding: wasi_nn::GraphEncoding,
-        target: wasi_nn::ExecutionTarget,
+        encoding: GraphEncoding,
+        target: ExecutionTarget,
     ) -> WasiNnResult<wasi_nn::Graph> {
         let arch = std::fs::read_to_string(architecure).map_err(|e| WasiNnError::InvalidPath(e))?;
         let arch_bytes = arch.into_bytes();
@@ -38,18 +39,16 @@ impl WasiNnCtx {
         &mut self,
         architecure: &[u8],
         weights: &[u8],
-        encoding: wasi_nn::GraphEncoding,
-        target: wasi_nn::ExecutionTarget,
+        encoding: GraphEncoding,
+        target: ExecutionTarget,
     ) -> WasiNnResult<wasi_nn::Graph> {
-        let encoding_id = match encoding {
-            wasi_nn::GRAPH_ENCODING_OPENVINO => "openvino",
-            _ => panic!("unknown encoding: {}", encoding),
-        };
-        let graph = if let Some(backend) = self.ctx.borrow_mut().backends.get_mut(encoding_id) {
-            backend.load(architecure, weights, target)?
-        } else {
-            return Err(UsageError::InvalidEncoding(encoding).into());
-        };
+        let encoding_id = encoding.to_string();
+        let graph =
+            if let Some(backend) = self.ctx.borrow_mut().backends.get_mut(encoding_id.as_str()) {
+                backend.load(architecure, weights, target)?
+            } else {
+                return Err(UsageError::InvalidEncoding(encoding.into()).into());
+            };
         let graph_id = self.ctx.borrow_mut().graphs.insert(graph);
         Ok(graph_id)
     }
@@ -72,7 +71,7 @@ impl WasiNnCtx {
         &mut self,
         exec_context_id: wasi_nn::GraphExecutionContext,
         index: u32,
-        tensor: wasi_nn::Tensor,
+        tensor: Tensor,
     ) -> WasiNnResult<()> {
         if let Some(exec_context) = self.ctx.borrow_mut().executions.get_mut(exec_context_id) {
             Ok(exec_context.set_input(index, tensor)?)
