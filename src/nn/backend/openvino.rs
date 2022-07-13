@@ -1,4 +1,5 @@
 use super::*;
+use crate::nn::Tensor;
 
 #[derive(Debug, Default)]
 pub(crate) struct OpenvinoBackend {}
@@ -48,7 +49,7 @@ pub(crate) struct OpenvinoExecutionContext {
 impl BackendExecutionContext for OpenvinoExecutionContext {
     fn set_input(&mut self, index: u32, tensor: Tensor) -> Result<(), BackendError> {
         unsafe {
-            wasi_nn::set_input(self.ctx, index, tensor.as_wasinn_tensor())
+            wasi_nn::set_input(self.ctx, index, tensor)
                 .map_err(|e| BackendError::SetInput(e.to_string()))
         }
     }

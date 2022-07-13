@@ -1,7 +1,7 @@
 use crate::error::{UsageError, WasiNnError};
 use crate::nn::{
     backend::{openvino::OpenvinoBackend, Backend, BackendExecutionContext, BackendGraph},
-    ExecutionTarget, GraphEncoding, Tensor,
+    ExecutionTarget, GraphEncoding,
 };
 use std::{cell::RefCell, collections::HashMap, hash::Hash};
 
@@ -71,7 +71,7 @@ impl WasiNnCtx {
         &mut self,
         exec_context_id: wasi_nn::GraphExecutionContext,
         index: u32,
-        tensor: Tensor,
+        tensor: wasi_nn::Tensor,
     ) -> WasiNnResult<()> {
         if let Some(exec_context) = self.ctx.borrow_mut().executions.get_mut(exec_context_id) {
             Ok(exec_context.set_input(index, tensor)?)

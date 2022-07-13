@@ -3,6 +3,8 @@ pub mod ctx;
 
 use std::fmt;
 
+pub type Tensor<'a> = wasi_nn::Tensor<'a>;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GraphEncoding {
     Openvino,
@@ -36,22 +38,6 @@ impl From<ExecutionTarget> for wasi_nn::ExecutionTarget {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct Tensor<'a> {
-    pub shape: Vec<u32>,
-    pub dtype: Dtype,
-    pub data: &'a [u8],
-}
-impl<'a> Tensor<'a> {
-    pub fn as_wasinn_tensor(&'a self) -> wasi_nn::Tensor<'a> {
-        wasi_nn::Tensor {
-            dimensions: self.shape.as_slice(),
-            r#type: self.dtype.into(),
-            data: self.data,
-        }
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Dtype {
     F32,
@@ -65,12 +51,3 @@ impl From<Dtype> for wasi_nn::TensorType {
         }
     }
 }
-
-// pub struct NTensor<'a> {
-//     /// Describe the size of the tensor (e.g. 2x2x2x2 -> [2, 2, 2, 2]). To represent a tensor containing a single value,
-//     /// use `[1]` for the tensor dimensions.
-//     pub dimensions: TensorDimensions<'a>,
-//     pub r#type: TensorType,
-//     /// Contains the tensor data.
-//     pub data: TensorData<'a>,
-// }
