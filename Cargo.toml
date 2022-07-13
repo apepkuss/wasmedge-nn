@@ -4,7 +4,7 @@ edition = "2021"
 license = "Apache-2.0"
 name = "wasmedge-nn"
 repository = "https://github.com/apepkuss/wasmedge-nn"
-version = "0.2.0"
+version = "0.3.0"
 
 [dependencies]
 anyhow = "1.0.42"
