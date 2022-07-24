@@ -49,4 +49,6 @@ pub enum BackendError {
 pub enum CvError {
     #[error("Failed while")]
     ProcessImage(#[from] image::ImageError),
+    #[error("Failed to open image file")]
+    LoadImage(#[from] std::io::Error),
 }

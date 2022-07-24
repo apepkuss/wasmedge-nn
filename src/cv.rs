@@ -1,129 +1,43 @@
-use crate::error::CvError;
-use image::{self, imageops, DynamicImage, Pixel, Rgb32FImage, RgbImage};
+use crate::{error::CvError, Dtype};
+use image::{self, io::Reader, DynamicImage};
+use std::path::Path;
 
 type CvResult<T> = Result<T, CvError>;
 
-pub fn imread(filename: impl AsRef<std::path::Path>) -> CvResult<DynamicImage> {
-    Ok(image::open(filename.as_ref())?)
-}
+// Take the image located at 'path', open it, resize it to height x width, and then converts
+// the pixel precision to FP32. The resulting BGR pixel vector is then returned.
+pub fn image_to_tensor(
+    path: impl AsRef<Path>,
+    nheight: u32,
+    nwidth: u32,
+    dtype: Dtype,
+) -> CvResult<Vec<u8>> {
+    let pixels = Reader::open(path.as_ref())?.decode()?;
+    let dyn_img: DynamicImage = pixels.resize_exact(nwidth, nheight, image::imageops::Triangle);
+    let bgr_img = dyn_img.to_bgr8();
+    // Get an array of the pixel values
+    let raw_u8_arr: &[u8] = &bgr_img.as_raw()[..];
 
-/// Resize this image and returns a new image. Does not preserve aspect ratio.
-///
-/// `nwidth` and `nheight` are the new image's dimensions.
-///
-pub fn resize(src: DynamicImage, nheight: u32, nwidth: u32) -> DynamicImage {
-    src.resize_exact(nwidth, nheight, imageops::Triangle)
-}
+    let u8_f32_arr: Vec<u8> = match dtype {
+        Dtype::F32 => {
+            // Create an array to hold the f32 value of those pixels
+            let bytes_required = raw_u8_arr.len() * 4;
+            let mut u8_f32_arr: Vec<u8> = vec![0; bytes_required];
 
-/// Convert RGB_F32 image to BGR_32F image. The RGB_F32 image will be consumed.
-pub fn to_bgr32f_bytes(src: &mut Rgb32FImage) -> &[u8] {
-    // convert rgb to bgr
-    let pixels = src.pixels_mut();
-    pixels.for_each(|p| {
-        let channel = p.channels_mut();
-        channel.swap(0, 2);
-    });
+            for i in 0..raw_u8_arr.len() {
+                // Read the number as a f32 and break it into u8 bytes
+                let u8_f32: f32 = raw_u8_arr[i] as f32;
+                let u8_bytes = u8_f32.to_ne_bytes();
 
-    let data = src.as_raw();
-    let slice: &[u8] =
-        unsafe { std::slice::from_raw_parts(data.as_ptr() as *const u8, data.len() * 4) };
-    slice
-}
+                for j in 0..4 {
+                    u8_f32_arr[(i * 4) + j] = u8_bytes[j];
+                }
+            }
 
-/// Convert RGB_U8 image to BGR_U8 image. The RGB_8U image will be consumed.
-pub fn to_bgr8u_bytes(src: &mut RgbImage) -> &[u8] {
-    // convert rgb to bgr
-    let pixels = src.pixels_mut();
-    pixels.for_each(|p| {
-        let channel = p.channels_mut();
-        channel.swap(0, 2);
-    });
+            u8_f32_arr
+        }
+        Dtype::U8 => raw_u8_arr.to_vec(),
+    };
 
-    let data = src.as_raw();
-    let slice: &[u8] =
-        unsafe { std::slice::from_raw_parts(data.as_ptr() as *const u8, data.len()) };
-    slice
-}
-
-pub fn to_tensor<T>(h: usize, w: usize, c: usize, data: Vec<T>) -> ndarray::Array3<T> {
-    ndarray::Array::from_shape_vec((h, w, c), data as Vec<T>).unwrap()
-}
-
-#[cfg(test)]
-mod tests {
-    use image::GenericImageView;
-
-    use super::*;
-
-    #[test]
-    fn test_rgb8_to_bgr8() {
-        let src = image::open("/Users/sam/workspace/rust/image-demo/ferris.png").unwrap();
-        dbg!("dims: {:?}", src.dimensions());
-
-        let dst = resize(src, 224, 224);
-        assert_eq!(dst.dimensions(), (224, 224));
-
-        let mut rgb8_image = dst.into_rgb8();
-        println!("number of elements: {}", rgb8_image.len());
-
-        let dst = to_bgr8u_bytes(&mut rgb8_image);
-        assert_eq!(dst.len(), 224 * 224 * 3);
-
-        let tensor = to_tensor(224, 224, 3, Vec::from(dst));
-        assert_eq!(tensor.shape(), [224, 224, 3]);
-    }
-
-    #[test]
-    fn test_rgb8_to_bgr32f() {
-        let src = image::open("/Users/sam/workspace/rust/image-demo/ferris.png").unwrap();
-        dbg!("dims: {:?}", src.dimensions());
-
-        let dst = resize(src, 224, 224);
-        assert_eq!(dst.dimensions(), (224, 224));
-
-        let mut rgb32f_image = dst.into_rgb32f();
-        println!("number of elements: {}", rgb32f_image.len());
-
-        let dst = to_bgr32f_bytes(&mut rgb32f_image);
-        assert_eq!(dst.len(), 224 * 224 * 3 * 4);
-    }
-
-    #[test]
-    fn test_tensor_u8() {
-        let src = image::open("/Users/sam/workspace/rust/image-demo/ferris.png").unwrap();
-        dbg!("dims: {:?}", src.dimensions());
-
-        let dst = resize(src, 224, 224);
-        assert_eq!(dst.dimensions(), (224, 224));
-
-        let rgb8_image = dst.into_rgb8();
-        println!("number of elements: {}", rgb8_image.len());
-
-        let data = rgb8_image.to_vec();
-
-        let tensor = to_tensor(224, 224, 3, data);
-        assert_eq!(tensor.shape(), [224, 224, 3]);
-
-        let new_tensor = tensor.insert_axis(ndarray::Axis(0));
-        assert_eq!(new_tensor.shape(), [1, 224, 224, 3]);
-    }
-
-    #[test]
-    fn test_tensor_f32() {
-        let src = image::open("/Users/sam/workspace/rust/image-demo/ferris.png").unwrap();
-        dbg!("dims: {:?}", src.dimensions());
-
-        let dst = resize(src, 224, 224);
-        assert_eq!(dst.dimensions(), (224, 224));
-
-        let rgb32f_image = dst.into_rgb32f();
-        println!("number of elements: {}", rgb32f_image.len());
-
-        let data = rgb32f_image.into_vec();
-        let tensor = to_tensor(224, 224, 3, data);
-        assert_eq!(tensor.shape(), [224, 224, 3]);
-
-        let new_tensor = tensor.insert_axis(ndarray::Axis(0));
-        assert_eq!(new_tensor.shape(), [1, 224, 224, 3]);
-    }
+    Ok(u8_f32_arr)
 }
