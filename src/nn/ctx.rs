@@ -1,11 +1,13 @@
 use crate::error::{UsageError, WasiNnError};
 use crate::nn::{
     backend::{openvino::OpenvinoBackend, Backend, BackendExecutionContext, BackendGraph},
-    ExecutionTarget, GraphEncoding,
+    ExecutionTarget, GraphEncoding, Tensor,
 };
 use std::{cell::RefCell, collections::HashMap, hash::Hash};
 
 pub type WasiNnResult<T> = std::result::Result<T, WasiNnError>;
+pub type Graph = wasi_nn::Graph;
+pub type GraphExecutionContext = wasi_nn::GraphExecutionContext;
 
 pub struct WasiNnCtx {
     ctx: RefCell<Ctx>,
@@ -24,7 +26,7 @@ impl WasiNnCtx {
         weights: &str,
         encoding: GraphEncoding,
         target: ExecutionTarget,
-    ) -> WasiNnResult<wasi_nn::Graph> {
+    ) -> WasiNnResult<Graph> {
         let arch = std::fs::read_to_string(architecure).map_err(|e| WasiNnError::InvalidPath(e))?;
         let arch_bytes = arch.into_bytes();
         println!("Load graph XML, size in bytes: {}", arch_bytes.len());
@@ -41,7 +43,7 @@ impl WasiNnCtx {
         weights: &[u8],
         encoding: GraphEncoding,
         target: ExecutionTarget,
-    ) -> WasiNnResult<wasi_nn::Graph> {
+    ) -> WasiNnResult<Graph> {
         let encoding_id = encoding.to_string();
         let graph =
             if let Some(backend) = self.ctx.borrow_mut().backends.get_mut(encoding_id.as_str()) {
@@ -53,11 +55,8 @@ impl WasiNnCtx {
         Ok(graph_id)
     }
 
-    pub fn init_execution_context(
-        &mut self,
-        graph_id: wasi_nn::Graph,
-    ) -> WasiNnResult<wasi_nn::GraphExecutionContext> {
-        let exec_context = if let Some(graph) = self.ctx.borrow_mut().graphs.get_mut(graph_id) {
+    pub fn init_execution_context(&mut self, graph: Graph) -> WasiNnResult<GraphExecutionContext> {
+        let exec_context = if let Some(graph) = self.ctx.borrow_mut().graphs.get_mut(graph) {
             graph.init_execution_context()?
         } else {
             return Err(UsageError::InvalidGraphHandle.into());
@@ -69,19 +68,19 @@ impl WasiNnCtx {
 
     pub fn set_input(
         &mut self,
-        exec_context_id: wasi_nn::GraphExecutionContext,
+        exec_ctx: GraphExecutionContext,
         index: u32,
-        tensor: wasi_nn::Tensor,
+        tensor: Tensor,
     ) -> WasiNnResult<()> {
-        if let Some(exec_context) = self.ctx.borrow_mut().executions.get_mut(exec_context_id) {
+        if let Some(exec_context) = self.ctx.borrow_mut().executions.get_mut(exec_ctx) {
             Ok(exec_context.set_input(index, tensor)?)
         } else {
             Err(UsageError::InvalidGraphHandle.into())
         }
     }
 
-    pub fn compute(&mut self, exec_context_id: wasi_nn::GraphExecutionContext) -> WasiNnResult<()> {
-        if let Some(exec_context) = self.ctx.borrow_mut().executions.get_mut(exec_context_id) {
+    pub fn compute(&mut self, exec_ctx: GraphExecutionContext) -> WasiNnResult<()> {
+        if let Some(exec_context) = self.ctx.borrow_mut().executions.get_mut(exec_ctx) {
             Ok(exec_context.compute()?)
         } else {
             Err(UsageError::InvalidExecutionContextHandle.into())
@@ -90,11 +89,11 @@ impl WasiNnCtx {
 
     pub fn get_output(
         &mut self,
-        exec_context_id: wasi_nn::GraphExecutionContext,
+        exec_ctx: GraphExecutionContext,
         index: u32,
         out_buffer: &mut [u8],
     ) -> WasiNnResult<u32> {
-        if let Some(exec_context) = self.ctx.borrow_mut().executions.get_mut(exec_context_id) {
+        if let Some(exec_context) = self.ctx.borrow_mut().executions.get_mut(exec_ctx) {
             Ok(exec_context.get_output(index, out_buffer)?)
         } else {
             Err(UsageError::InvalidGraphHandle.into())
