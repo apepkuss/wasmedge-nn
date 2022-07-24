@@ -1,4 +1,4 @@
-use crate::{error::CvError, Dtype};
+use crate::{error::CvError, nn::Dtype};
 use image::{self, io::Reader, DynamicImage};
 use std::path::Path;
 

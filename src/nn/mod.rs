@@ -43,11 +43,38 @@ pub enum Dtype {
     F32,
     U8,
 }
+impl Dtype {
+    /// Returns the number of bytes occupied by the dtype.
+    pub fn bytes(&self) -> usize {
+        match self {
+            Dtype::U8 => 1,
+            Dtype::F32 => 4,
+        }
+    }
+}
 impl From<Dtype> for wasi_nn::TensorType {
     fn from(dtype: Dtype) -> Self {
         match dtype {
             Dtype::F32 => wasi_nn::TENSOR_TYPE_F32,
             Dtype::U8 => wasi_nn::TENSOR_TYPE_U8,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Dimension {
+    pub height: u32,
+    pub width: u32,
+    pub channels: u32,
+    pub dtype: Dtype,
+}
+impl Dimension {
+    pub fn new(height: u32, width: u32, channels: u32, dtype: Dtype) -> Self {
+        Self {
+            height,
+            width,
+            channels,
+            dtype,
         }
     }
 }
