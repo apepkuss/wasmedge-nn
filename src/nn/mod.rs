@@ -3,7 +3,21 @@ pub mod ctx;
 
 use std::fmt;
 
-pub type Tensor<'a> = wasi_nn::Tensor<'a>;
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Tensor {
+    data: Vec<u8>,
+    dtype: Dtype,
+    shape: Vec<u32>,
+}
+impl Tensor {
+    pub fn as_wasinn_tensor(&self) -> wasi_nn::Tensor<'_> {
+        wasi_nn::Tensor {
+            dimensions: self.shape.as_slice(),
+            r#type: self.dtype.into(),
+            data: self.data.as_slice(),
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GraphEncoding {
