@@ -19,19 +19,26 @@ pub fn image_to_bytes(
     // Get an array of the pixel values
     let raw_u8_arr: &[u8] = &bgr_img.as_raw()[..];
 
-    // Create an array to hold the f32 value of those pixels
-    let bytes_required = raw_u8_arr.len() * dtype.bytes();
-    let mut u8_arr: Vec<u8> = vec![0; bytes_required];
+    let u8_arr = match dtype {
+        Dtype::F32 => {
+            // Create an array to hold the f32 value of those pixels
+            let bytes_required = raw_u8_arr.len() * 4;
+            let mut u8_arr: Vec<u8> = vec![0; bytes_required];
 
-    for i in 0..raw_u8_arr.len() {
-        // Read the number as a f32 and break it into u8 bytes
-        let u8_f32: f32 = raw_u8_arr[i] as f32;
-        let u8_bytes = u8_f32.to_ne_bytes();
+            for i in 0..raw_u8_arr.len() {
+                // Read the number as a f32 and break it into u8 bytes
+                let u8_f32: f32 = raw_u8_arr[i] as f32;
+                let u8_bytes = u8_f32.to_ne_bytes();
 
-        for j in 0..dtype.bytes() {
-            u8_arr[(i * dtype.bytes()) + j] = u8_bytes[j];
+                for j in 0..4 {
+                    u8_arr[(i * 4) + j] = u8_bytes[j];
+                }
+            }
+
+            u8_arr
         }
-    }
+        Dtype::U8 => raw_u8_arr.to_vec(),
+    };
 
     Ok(u8_arr)
 }

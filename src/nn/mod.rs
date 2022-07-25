@@ -18,7 +18,7 @@ impl Tensor {
         }
     }
 
-    pub fn as_wasinn_tensor(&self) -> wasi_nn::Tensor<'_> {
+    pub fn as_wasinn_tensor(&self) -> wasi_nn::Tensor {
         wasi_nn::Tensor {
             dimensions: self.shape.as_slice(),
             r#type: self.dtype.into(),
