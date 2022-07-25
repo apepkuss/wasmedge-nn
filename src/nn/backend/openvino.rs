@@ -48,9 +48,8 @@ pub(crate) struct OpenvinoExecutionContext {
 }
 impl BackendExecutionContext for OpenvinoExecutionContext {
     fn set_input(&mut self, index: u32, tensor: Tensor) -> Result<(), BackendError> {
-        let wasi_nn_tensor = tensor.as_wasinn_tensor();
         unsafe {
-            wasi_nn::set_input(self.ctx, index, wasi_nn_tensor)
+            wasi_nn::set_input(self.ctx, index, tensor)
                 .map_err(|e| BackendError::SetInput(e.to_string()))
         }
     }
