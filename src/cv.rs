@@ -1,10 +1,13 @@
-use crate::{error::CvError, nn::Dtype};
+use crate::{
+    error::CvError,
+    nn::{Dtype, Tensor},
+};
 use image::{self, io::Reader, DynamicImage};
 use std::path::Path;
 
 type CvResult<T> = Result<T, CvError>;
 
-pub fn image_to_tensor(
+pub fn image_to_bytes(
     path: impl AsRef<Path>,
     nheight: u32,
     nwidth: u32,
@@ -33,6 +36,16 @@ pub fn image_to_tensor(
     Ok(u8_arr)
 }
 
+pub fn image_to_tensor(
+    path: impl AsRef<Path>,
+    nheight: u32,
+    nwidth: u32,
+    dtype: Dtype,
+) -> CvResult<Tensor> {
+    let bytes = image_to_bytes(path.as_ref(), nheight, nwidth, dtype)?;
+    Ok(Tensor::new(dtype, [nheight, nwidth], bytes.as_slice()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -40,7 +53,7 @@ mod tests {
     #[test]
     fn test_image_to_tensor() {
         let image_file = "/Volumes/Dev/secondstate/me/WasmEdge-WASINN-examples/openvino-road-segmentation-adas/rust/image/empty_road_mapillary.jpg";
-        let result = image_to_tensor(image_file, 512, 896, Dtype::F32);
+        let result = image_to_bytes(image_file, 512, 896, Dtype::F32);
         assert!(result.is_ok());
         let bytes = result.unwrap();
 

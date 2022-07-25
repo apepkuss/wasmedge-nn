@@ -10,6 +10,14 @@ pub struct Tensor {
     shape: Vec<u32>,
 }
 impl Tensor {
+    pub fn new(dtype: Dtype, shape: impl AsRef<[u32]>, data: impl AsRef<[u8]>) -> Self {
+        Self {
+            data: data.as_ref().to_vec(),
+            dtype,
+            shape: shape.as_ref().to_vec(),
+        }
+    }
+
     pub fn as_wasinn_tensor(&self) -> wasi_nn::Tensor<'_> {
         wasi_nn::Tensor {
             dimensions: self.shape.as_slice(),
