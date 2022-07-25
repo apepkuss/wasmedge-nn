@@ -4,8 +4,6 @@ use std::path::Path;
 
 type CvResult<T> = Result<T, CvError>;
 
-// Take the image located at 'path', open it, resize it to height x width, and then converts
-// the pixel precision to FP32. The resulting BGR pixel vector is then returned.
 pub fn image_to_tensor(
     path: impl AsRef<Path>,
     nheight: u32,
