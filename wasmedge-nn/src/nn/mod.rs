@@ -3,8 +3,6 @@ pub mod ctx;
 
 use std::fmt;
 
-use self::ctx::Graph;
-
 pub type Tensor<'a> = wasmedge_wasi_nn::Tensor<'a>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
