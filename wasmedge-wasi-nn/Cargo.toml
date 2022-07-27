@@ -1,0 +1,14 @@
+[package]
+authors = ["Sam Liu <sam@secondstate.io>"]
+categories = ["wasm", "computer-vision"]
+description = "High-level Rust bindings for wasi-nn"
+edition = "2021"
+keywords = ["webassembly", "wasm", "neural-network"]
+license = "Apache-2.0"
+name = "wasmedge-wasi-nn"
+publish = true
+readme = "README.md"
+repository = "https://github.com/bytecodealliance/wasi-nn"
+version = "0.1.0"
+
+[dependencies]

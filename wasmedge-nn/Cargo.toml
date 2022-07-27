@@ -1,0 +1,14 @@
+[package]
+description = "This package contains the safe wasi-nn interfaces and image processing functions."
+edition = "2021"
+license = "Apache-2.0"
+name = "wasmedge-nn"
+repository = "https://github.com/apepkuss/wasmedge-nn"
+version = "0.5.2"
+
+[dependencies]
+anyhow = "1.0.42"
+image = {version = "0.23.14", default-features = false, features = ["gif", "jpeg", "ico", "png", "pnm", "tga", "tiff", "webp", "bmp", "hdr", "dxt", "dds", "farbfeld"]}
+ndarray = "0.15.4"
+thiserror = "1.0.31"
+wasmedge-wasi-nn = {version = "0.1.0", path = "../wasmedge-wasi-nn"}
