@@ -6,8 +6,8 @@ use crate::nn::{
 use std::{cell::RefCell, collections::HashMap, hash::Hash};
 
 pub type WasiNnResult<T> = std::result::Result<T, WasiNnError>;
-pub type Graph = wasi_nn::Graph;
-pub type GraphExecutionContext = wasi_nn::GraphExecutionContext;
+pub type Graph = wasmedge_wasi_nn::Graph;
+pub type GraphExecutionContext = wasmedge_wasi_nn::GraphExecutionContext;
 
 pub struct WasiNnCtx {
     ctx: RefCell<Ctx>,
@@ -103,8 +103,9 @@ impl WasiNnCtx {
 
 pub(crate) struct Ctx {
     pub(crate) backends: HashMap<String, Box<dyn Backend>>,
-    pub(crate) graphs: Table<wasi_nn::Graph, Box<dyn BackendGraph>>,
-    pub(crate) executions: Table<wasi_nn::GraphExecutionContext, Box<dyn BackendExecutionContext>>,
+    pub(crate) graphs: Table<wasmedge_wasi_nn::Graph, Box<dyn BackendGraph>>,
+    pub(crate) executions:
+        Table<wasmedge_wasi_nn::GraphExecutionContext, Box<dyn BackendExecutionContext>>,
 }
 impl Ctx {
     pub fn new() -> WasiNnResult<Self> {

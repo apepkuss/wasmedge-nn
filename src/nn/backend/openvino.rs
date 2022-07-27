@@ -15,9 +15,9 @@ impl Backend for OpenvinoBackend {
         target: ExecutionTarget,
     ) -> Result<Box<dyn BackendGraph>, BackendError> {
         let graph = unsafe {
-            wasi_nn::load(
+            wasmedge_wasi_nn::load(
                 &[xml_bytes, weights],
-                wasi_nn::GRAPH_ENCODING_OPENVINO,
+                wasmedge_wasi_nn::GRAPH_ENCODING_OPENVINO,
                 target.into(),
             )
             .map_err(|e| BackendError::ModelLoad(e.to_string()))?
@@ -29,12 +29,13 @@ impl Backend for OpenvinoBackend {
 
 #[derive(Default, Debug)]
 pub(crate) struct OpenvinoGraph {
-    graph: wasi_nn::Graph,
+    graph: wasmedge_wasi_nn::Graph,
 }
 impl BackendGraph for OpenvinoGraph {
     fn init_execution_context(&mut self) -> Result<Box<dyn BackendExecutionContext>, BackendError> {
         let ctx = unsafe {
-            wasi_nn::init_execution_context(self.graph).expect("failed to create execution context")
+            wasmedge_wasi_nn::init_execution_context(self.graph)
+                .expect("failed to create execution context")
         };
         println!("Created wasi-nn execution context with ID: {}", ctx);
 
@@ -44,23 +45,25 @@ impl BackendGraph for OpenvinoGraph {
 
 #[derive(Default, Debug)]
 pub(crate) struct OpenvinoExecutionContext {
-    ctx: wasi_nn::GraphExecutionContext,
+    ctx: wasmedge_wasi_nn::GraphExecutionContext,
 }
 impl BackendExecutionContext for OpenvinoExecutionContext {
     fn set_input(&mut self, index: u32, tensor: Tensor) -> Result<(), BackendError> {
         unsafe {
-            wasi_nn::set_input(self.ctx, index, tensor)
+            wasmedge_wasi_nn::set_input(self.ctx, index, tensor)
                 .map_err(|e| BackendError::SetInput(e.to_string()))
         }
     }
 
     fn compute(&mut self) -> Result<(), BackendError> {
-        unsafe { wasi_nn::compute(self.ctx).map_err(|e| BackendError::Compute(e.to_string())) }
+        unsafe {
+            wasmedge_wasi_nn::compute(self.ctx).map_err(|e| BackendError::Compute(e.to_string()))
+        }
     }
 
     fn get_output(&mut self, index: u32, out_buffer: &mut [u8]) -> Result<u32, BackendError> {
         unsafe {
-            wasi_nn::get_output(
+            wasmedge_wasi_nn::get_output(
                 self.ctx,
                 index,
                 out_buffer.as_mut_ptr(),

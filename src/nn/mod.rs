@@ -3,16 +3,16 @@ pub mod ctx;
 
 use std::fmt;
 
-pub type Tensor<'a> = wasi_nn::Tensor<'a>;
+pub type Tensor<'a> = wasmedge_wasi_nn::Tensor<'a>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GraphEncoding {
     Openvino,
 }
-impl From<GraphEncoding> for wasi_nn::GraphEncoding {
+impl From<GraphEncoding> for wasmedge_wasi_nn::GraphEncoding {
     fn from(encoding: GraphEncoding) -> Self {
         match encoding {
-            GraphEncoding::Openvino => wasi_nn::GRAPH_ENCODING_OPENVINO,
+            GraphEncoding::Openvino => wasmedge_wasi_nn::GRAPH_ENCODING_OPENVINO,
         }
     }
 }
@@ -29,11 +29,11 @@ pub enum ExecutionTarget {
     CPU,
     GPU,
 }
-impl From<ExecutionTarget> for wasi_nn::ExecutionTarget {
+impl From<ExecutionTarget> for wasmedge_wasi_nn::ExecutionTarget {
     fn from(target: ExecutionTarget) -> Self {
         match target {
-            ExecutionTarget::CPU => wasi_nn::EXECUTION_TARGET_CPU,
-            ExecutionTarget::GPU => wasi_nn::EXECUTION_TARGET_GPU,
+            ExecutionTarget::CPU => wasmedge_wasi_nn::EXECUTION_TARGET_CPU,
+            ExecutionTarget::GPU => wasmedge_wasi_nn::EXECUTION_TARGET_GPU,
         }
     }
 }
@@ -52,11 +52,11 @@ impl Dtype {
         }
     }
 }
-impl From<Dtype> for wasi_nn::TensorType {
+impl From<Dtype> for wasmedge_wasi_nn::TensorType {
     fn from(dtype: Dtype) -> Self {
         match dtype {
-            Dtype::F32 => wasi_nn::TENSOR_TYPE_F32,
-            Dtype::U8 => wasi_nn::TENSOR_TYPE_U8,
+            Dtype::F32 => wasmedge_wasi_nn::TENSOR_TYPE_F32,
+            Dtype::U8 => wasmedge_wasi_nn::TENSOR_TYPE_U8,
         }
     }
 }

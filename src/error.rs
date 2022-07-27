@@ -16,7 +16,7 @@ pub enum UsageError {
     #[error("Invalid context; has the load function been called?")]
     InvalidContext,
     #[error("Only OpenVINO's IR is currently supported, passed encoding: {0:?}")]
-    InvalidEncoding(wasi_nn::GraphEncoding),
+    InvalidEncoding(wasmedge_wasi_nn::GraphEncoding),
     #[error("OpenVINO expects only two buffers (i.e. [ir, weights]), passed: {0}")]
     InvalidNumberOfBuilders(u32),
     #[error("Invalid graph handle; has it been loaded?")]

@@ -11,4 +11,4 @@ anyhow = "1.0.42"
 image = {version = "0.23.14", default-features = false, features = ["gif", "jpeg", "ico", "png", "pnm", "tga", "tiff", "webp", "bmp", "hdr", "dxt", "dds", "farbfeld"]}
 ndarray = "0.15.4"
 thiserror = "1.0.31"
-wasi-nn = "0.1.0"
+wasmedge-wasi-nn = {version = "0.1.0", path = "crates/wasmedge-wasi-nn"}
