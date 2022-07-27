@@ -16,7 +16,7 @@ impl From<GraphEncoding> for wasmedge_wasi_nn::GraphEncoding {
     fn from(encoding: GraphEncoding) -> Self {
         match encoding {
             GraphEncoding::Openvino => wasmedge_wasi_nn::GRAPH_ENCODING_OPENVINO,
-            GraphEncoding::Pytorch => wasmedge_wasi_nn::GRAPH_ENCODING_PYTORCH,
+            GraphEncoding::Pytorch => wasmedge_wasi_nn::GRAPH_ENCODING_TORCH,
         }
     }
 }
