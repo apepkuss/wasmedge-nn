@@ -22,15 +22,15 @@ impl WasiNnCtx {
 
     pub fn load(
         &mut self,
-        architecture: Option<&str>,
-        weights: &str,
+        arch_file: Option<&str>,
+        weights_file: &str,
         encoding: GraphEncoding,
         target: ExecutionTarget,
     ) -> WasiNnResult<Graph> {
-        let weights = std::fs::read(weights).map_err(|e| WasiNnError::InvalidPath(e))?;
+        let weights = std::fs::read(weights_file).map_err(|e| WasiNnError::InvalidPath(e))?;
         println!("Load graph weights, size in bytes: {}", weights.len());
 
-        match architecture {
+        match arch_file {
             Some(architecture) => {
                 let arch = std::fs::read_to_string(architecture)
                     .map_err(|e| WasiNnError::InvalidPath(e))?;
