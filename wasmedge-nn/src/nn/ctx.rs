@@ -22,24 +22,35 @@ impl WasiNnCtx {
 
     pub fn load(
         &mut self,
-        architecure: &str,
+        architecture: Option<&str>,
         weights: &str,
         encoding: GraphEncoding,
         target: ExecutionTarget,
     ) -> WasiNnResult<Graph> {
-        let arch = std::fs::read_to_string(architecure).map_err(|e| WasiNnError::InvalidPath(e))?;
-        let arch_bytes = arch.into_bytes();
-        println!("Load graph XML, size in bytes: {}", arch_bytes.len());
-
         let weights = std::fs::read(weights).map_err(|e| WasiNnError::InvalidPath(e))?;
         println!("Load graph weights, size in bytes: {}", weights.len());
 
-        self.load_from_bytes(arch_bytes.as_slice(), weights.as_slice(), encoding, target)
+        match architecture {
+            Some(architecture) => {
+                let arch = std::fs::read_to_string(architecture)
+                    .map_err(|e| WasiNnError::InvalidPath(e))?;
+                let arch_bytes = arch.into_bytes();
+                println!("Load graph XML, size in bytes: {}", arch_bytes.len());
+
+                self.load_from_bytes(
+                    Some(arch_bytes.as_slice()),
+                    weights.as_slice(),
+                    encoding,
+                    target,
+                )
+            }
+            None => self.load_from_bytes(None, weights.as_slice(), encoding, target),
+        }
     }
 
     pub fn load_from_bytes(
         &mut self,
-        architecure: &[u8],
+        architecure: Option<&[u8]>,
         weights: &[u8],
         encoding: GraphEncoding,
         target: ExecutionTarget,

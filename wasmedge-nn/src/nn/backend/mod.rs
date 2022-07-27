@@ -1,4 +1,5 @@
 pub(crate) mod openvino;
+pub(crate) mod torch;
 
 use crate::{
     error::BackendError,
@@ -10,7 +11,7 @@ pub(crate) trait Backend {
     fn name(&self) -> &str;
     fn load(
         &mut self,
-        architecure: &[u8],
+        architecure: Option<&[u8]>,
         weights: &[u8],
         target: ExecutionTarget,
     ) -> Result<Box<dyn BackendGraph>, BackendError>;

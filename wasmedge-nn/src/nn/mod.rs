@@ -3,16 +3,20 @@ pub mod ctx;
 
 use std::fmt;
 
+use self::ctx::Graph;
+
 pub type Tensor<'a> = wasmedge_wasi_nn::Tensor<'a>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GraphEncoding {
     Openvino,
+    Pytorch,
 }
 impl From<GraphEncoding> for wasmedge_wasi_nn::GraphEncoding {
     fn from(encoding: GraphEncoding) -> Self {
         match encoding {
             GraphEncoding::Openvino => wasmedge_wasi_nn::GRAPH_ENCODING_OPENVINO,
+            GraphEncoding::Pytorch => wasmedge_wasi_nn::GRAPH_ENCODING_PYTORCH,
         }
     }
 }
@@ -20,6 +24,7 @@ impl fmt::Display for GraphEncoding {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             GraphEncoding::Openvino => write!(f, "openvino"),
+            GraphEncoding::Pytorch => write!(f, "pytorch"),
         }
     }
 }

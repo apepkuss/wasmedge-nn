@@ -10,20 +10,28 @@ impl Backend for OpenvinoBackend {
 
     fn load(
         &mut self,
-        xml_bytes: &[u8],
+        xml_bytes: Option<&[u8]>,
         weights: &[u8],
         target: ExecutionTarget,
     ) -> Result<Box<dyn BackendGraph>, BackendError> {
-        let graph = unsafe {
-            wasmedge_wasi_nn::load(
-                &[xml_bytes, weights],
-                wasmedge_wasi_nn::GRAPH_ENCODING_OPENVINO,
-                target.into(),
-            )
-            .map_err(|e| BackendError::ModelLoad(e.to_string()))?
-        };
+        match xml_bytes {
+            Some(xml_bytes) => {
+                let graph = unsafe {
+                    wasmedge_wasi_nn::load(
+                        &[xml_bytes, weights],
+                        wasmedge_wasi_nn::GRAPH_ENCODING_OPENVINO,
+                        target.into(),
+                    )
+                    .map_err(|e| BackendError::ModelLoad(e.to_string()))?
+                };
 
-        Ok(Box::new(OpenvinoGraph { graph }))
+                Ok(Box::new(OpenvinoGraph { graph }))
+            }
+            None => Err(BackendError::ModelLoad(
+                "[Backend] The model architecuture file (*.xml) is required for OpenVINO backend"
+                    .into(),
+            )),
+        }
     }
 }
 
