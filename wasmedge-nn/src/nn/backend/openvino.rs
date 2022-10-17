@@ -1,5 +1,6 @@
 use super::*;
 use crate::nn::Tensor;
+use wasi_nn as nn;
 
 #[derive(Debug, Default)]
 pub(crate) struct OpenvinoBackend {}
@@ -17,9 +18,9 @@ impl Backend for OpenvinoBackend {
         match xml_bytes {
             Some(xml_bytes) => {
                 let graph = unsafe {
-                    wasmedge_wasi_nn::load(
+                    nn::load(
                         &[xml_bytes, weights],
-                        wasmedge_wasi_nn::GRAPH_ENCODING_OPENVINO,
+                        nn::GRAPH_ENCODING_OPENVINO,
                         target.into(),
                     )
                     .map_err(|e| BackendError::ModelLoad(e.to_string()))?
@@ -37,13 +38,12 @@ impl Backend for OpenvinoBackend {
 
 #[derive(Default, Debug)]
 pub(crate) struct OpenvinoGraph {
-    graph: wasmedge_wasi_nn::Graph,
+    graph: nn::Graph,
 }
 impl BackendGraph for OpenvinoGraph {
     fn init_execution_context(&mut self) -> Result<Box<dyn BackendExecutionContext>, BackendError> {
         let ctx = unsafe {
-            wasmedge_wasi_nn::init_execution_context(self.graph)
-                .expect("failed to create execution context")
+            nn::init_execution_context(self.graph).expect("failed to create execution context")
         };
         println!("Created wasi-nn execution context with ID: {}", ctx);
 
@@ -53,25 +53,23 @@ impl BackendGraph for OpenvinoGraph {
 
 #[derive(Default, Debug)]
 pub(crate) struct OpenvinoExecutionContext {
-    ctx: wasmedge_wasi_nn::GraphExecutionContext,
+    ctx: nn::GraphExecutionContext,
 }
 impl BackendExecutionContext for OpenvinoExecutionContext {
     fn set_input(&mut self, index: u32, tensor: Tensor) -> Result<(), BackendError> {
         unsafe {
-            wasmedge_wasi_nn::set_input(self.ctx, index, tensor)
+            nn::set_input(self.ctx, index, tensor)
                 .map_err(|e| BackendError::SetInput(e.to_string()))
         }
     }
 
     fn compute(&mut self) -> Result<(), BackendError> {
-        unsafe {
-            wasmedge_wasi_nn::compute(self.ctx).map_err(|e| BackendError::Compute(e.to_string()))
-        }
+        unsafe { nn::compute(self.ctx).map_err(|e| BackendError::Compute(e.to_string())) }
     }
 
     fn get_output(&mut self, index: u32, out_buffer: &mut [u8]) -> Result<u32, BackendError> {
         unsafe {
-            wasmedge_wasi_nn::get_output(
+            nn::get_output(
                 self.ctx,
                 index,
                 out_buffer.as_mut_ptr(),
